@@ -1,0 +1,10 @@
+version: '3'
+services:
+    pwn:
+        container_name: ub18
+        build: .
+        image: nopwndocker/ub18.04
+        cap_add:
+            - SYS_PTRACE
+        command: /bin/zsh
+        tty: true

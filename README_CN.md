@@ -1,12 +1,12 @@
 # NoPwnDocker
 > **ENGLISH | [中文](README_CN.md)**
 
-Beautiful and powerful terminal Docker environment for Pwn in CTF! Fuck the environment setup that's why this repo created.
+拥有高颜值强大终端的 PWN CTF 的 Docker 环境! 创建的原因是我再也不想配 pwn 环境啦！
 
 
-I created this just for myself. It is my very first time making an image.
+这仅仅是我用于个人的仓库。这也是我第一次自己构建镜像。
 
-If you wish, you can modify it on your own, or open an issue to suggest how should I improve it. (Or simply open a PR!)
+你可以随心所欲修改自己的东西，或是提交一个 issue 告诉我你的建议（或者直接 PR 搞定！）
 
 ## Included
 - [zsh](https://www.zsh.org/)
@@ -25,32 +25,29 @@ If you wish, you can modify it on your own, or open an issue to suggest how shou
 - [ltrace](https://linux.die.net/man/1/ltrace)      —— trace library function call
 - [strace](https://linux.die.net/man/1/strace)     —— trace system call
 
-## How to use?
+## 怎么使用
 ```bash
 git clone https://github.com/Nova-Noir/NoPwnDocker
 cd NoPwnDocker
 docker compose up -d
 ```
 
-## Configuration
-There's not much can be modified. But you do can change something.
-- open `Dockerfile`, you can change the version and proxy and thread number.
-- open `docker-compose.yml`, you can change the container name.
-- modify `starship.toml` to use your own starship style.
-- modify `build_glibc*.sh` to change the directory( could be improved next version ).
-- modify `.gdbinit` to use your own gdbinit config.
+## 配置
+没有什么可以自定义的，但你确实有一些可以操作
+- 打开 `Dockerfile`, 你能修改使用的版本，代理以及线程数。
+- 打开 `docker-compose.yml`, 你能修改容器名
+- 修改 `starship.toml` 来使用你自己的 starship 样式
+- 修改 `build_glibc*.sh` 来更改存放路径（可能在下个版本中修改）
+- 修改 `.gdbinit` 来使用你自己的 gdbinit 配置
 
 
-## Usage or features
+## 用法和特点
 ### gdb
-`init-gef`、`init-pwndbg` to load different gdb plugin.
+`init-gef`、`init-pwndbg` 来使用不同的 gdb 插件
 ### zsh
-`zsh-syntax-highlighting` and `zsh-autosuggestions` plugins
+`zsh-syntax-highlighting` 和 `zsh-autosuggestions` 插件
 
 
-## Update frequency
-Maybe never. Or once I come up with some useful utilities in Pwn.
 
-## command question
-### `loc1@GLIBC_2.2.5' can't be versioned to common symbol 'loc1'
-see https://patchwork.ozlabs.org/project/glibc/patch/20170623161158.GA5384@gmail.com/ (will be fixed in next version)
+## 更新频率
+可能永远不会。或是当我想起来有什么有趣的东西可以被加入的时候。
