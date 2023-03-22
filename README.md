@@ -29,7 +29,8 @@ If you wish, you can modify it on your own, or open an issue to suggest how shou
 ```bash
 git clone https://github.com/Nova-Noir/NoPwnDocker
 cd NoPwnDocker
-docker compose up -d
+sudo docker compose up -d
+sudo docker exec -it ub18 /bin/zsh
 ```
 
 ## Configuration
