@@ -143,6 +143,11 @@ RUN GLIBC_VERSION=2.36 bash build_glibc32.sh
 # RUN git clone --depth 1 https://github.com/niklasb/libc-database.git /ctf/libc-database && \
 #     cd /ctf/libc-database && ./get ubuntu || echo "/ctf/libc-database/" > ~/.libcdb_path && \
 #     rm -rf /tmp/*
+
+# Utilities
+RUN sed -i "s?# export PATH?export PATH?g" /root/.zshrc && \
+    echo "export LANG=C.UTF-8" >> /root/.zshrc
+
 WORKDIR /ctf/
 
 ENV HTTP_PROXY=''
