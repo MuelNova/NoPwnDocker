@@ -6,14 +6,17 @@
 FROM ubuntu:18.04
 LABEL maintainer="Miu-Nova <n@ova.moe>"
 
+
 #############################
 ## Change the config here  ##
 #############################
+
 # proxy
 ENV HTTP_PROXY=http://172.17.0.1:7899
-# make threads num
-ENV THREADS=20
 
+#############################
+##       Config end        ##
+#############################
 
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -118,40 +121,21 @@ RUN apt-get install -y \
     libgetopt-argvfile-perl &&\
     rm -rf /var/lib/apt/list/*
 
-WORKDIR /root/
-COPY build_glibc64.sh ./build_glibc64.sh
-COPY build_glibc32.sh ./build_glibc32.sh
+WORKDIR /ctf/
+COPY build_glibc.sh ./build_glibc.sh
 
-RUN  chmod +x build_glibc*
+RUN  chmod +x build_glibc.sh
 
-# DEBUG LIBC
-# Remove/Add the version you don't want use, you can manually add them in docker.
-
-# RUN GLIBC_VERSION=2.23 bash build_glibc64.sh
-# RUN GLIBC_VERSION=2.23 bash build_glibc32.sh
-# RUN GLIBC_VERSION=2.24 bash build_glibc64.sh
-# RUN GLIBC_VERSION=2.24 bash build_glibc32.sh
-RUN GLIBC_VERSION=2.27 bash build_glibc64.sh
-RUN GLIBC_VERSION=2.27 bash build_glibc32.sh
-RUN GLIBC_VERSION=2.31 bash build_glibc64.sh
-RUN GLIBC_VERSION=2.31 bash build_glibc32.sh
-RUN GLIBC_VERSION=2.32 bash build_glibc64.sh
-RUN GLIBC_VERSION=2.32 bash build_glibc32.sh
-RUN GLIBC_VERSION=2.36 bash build_glibc64.sh
-RUN GLIBC_VERSION=2.36 bash build_glibc32.sh
-
-# RUN git clone --depth 1 https://github.com/niklasb/libc-database.git /ctf/libc-database && \
-#     cd /ctf/libc-database && ./get ubuntu || echo "/ctf/libc-database/" > ~/.libcdb_path && \
-#     rm -rf /tmp/*
+RUN git clone --depth 1 https://github.com/niklasb/libc-database.git /ctf/libc-database
+RUN git clone --depth 1 https://github.com/matrix1001/glibc-all-in-one /ctf/glibc_all_in_one && \
+    cd /ctf/glibc_all_in_one && chmod +x update_list && \
+    python3 update_list
 
 # Utilities
 RUN sed -i "s?# export PATH?export PATH?g" /root/.zshrc && \
     echo "export LANG=C.UTF-8" >> /root/.zshrc
 
-WORKDIR /ctf/
-
-ENV HTTP_PROXY=''
-ENV THREADS=''
+RUN unset HTTP_PROXY
 
 
 CMD /bin/zsh

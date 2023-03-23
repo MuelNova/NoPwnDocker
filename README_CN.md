@@ -1,5 +1,20 @@
+<div align="center">
+  <img src="https://cdn.ova.moe/img/image-20230323134431358.png">
+</div>
+
+
+<div align="center">
+
 # NoPwnDocker
-> **ENGLISH | [中文](README_CN.md)**
+
+> **[ENGLISH](README.md) | 中文**
+
+<a href="./LICENSE">
+    <img src="https://img.shields.io/github/license/Nova-Noir/NoPwnDocker.svg" alt="license">
+</a>
+
+</div>
+
 
 拥有高颜值强大终端的 PWN CTF 的 Docker 环境! 创建的原因是我再也不想配 pwn 环境啦！
 
@@ -8,7 +23,7 @@
 
 你可以随心所欲修改自己的东西，或是提交一个 issue 告诉我你的建议（或者直接 PR 搞定！）
 
-## Included
+## 包含
 - [zsh](https://www.zsh.org/)
 - [oh-my-zsh](https://ohmyz.sh/)
 - [starship](https://starship.rs/)
@@ -26,19 +41,32 @@
 - [strace](https://linux.die.net/man/1/strace)     —— trace system call
 
 ## 怎么使用
+最简单
 ```bash
 git clone https://github.com/Nova-Noir/NoPwnDocker
 cd NoPwnDocker
 sudo docker compose up -d
 sudo docker exec -it ub18 /bin/zsh
 ```
+推荐
+```bash
+git clone https://github.com/Nova-Noir/NoPwnDocker
+cd NoPwnDocker
+export ctf_name="<FOLDER_NAME>"
+docker build . -t nopwndocker:ubuntu18.04
+docker run  -it \
+            -h ${ctf_name} \
+            --name ${ctf_name} \
+            -v $(pwd)/${ctf_name}:/ctf/ \
+            --cap-add=SYS_PTRACE \
+            nopwndocker:ubuntu18.04
+```
 
 ## 配置
 没有什么可以自定义的，但你确实有一些可以操作
-- 打开 `Dockerfile`, 你能修改使用的版本，代理以及线程数。
+- 打开 `Dockerfile`, 你能修改使用的版本，代理。
 - 打开 `docker-compose.yml`, 你能修改容器名
 - 修改 `starship.toml` 来使用你自己的 starship 样式
-- 修改 `build_glibc*.sh` 来更改存放路径（可能在下个版本中修改）
 - 修改 `.gdbinit` 来使用你自己的 gdbinit 配置
 
 
@@ -47,8 +75,21 @@ sudo docker exec -it ub18 /bin/zsh
 `init-gef`、`init-pwndbg` 来使用不同的 gdb 插件
 ### zsh
 `zsh-syntax-highlighting` 和 `zsh-autosuggestions` 插件
+### build_glibc
+一个一键编译带有调试符号的 glibc 的 shell 文件
+`bash ~/build_glibc.sh -h`
+> 在编译老版本的时候可能存在 BUG
+> 在下面可以看到解决方法 (至少对我有效的)
+#### `loc1@GLIBC_2.2.5' can't be versioned to common symbol 'loc1'
+see https://patchwork.ozlabs.org/project/glibc/patch/20170623161158.GA5384@gmail.com/
 
 
 
 ## 更新频率
 可能永远不会。或是当我想起来有什么有趣的东西可以被加入的时候。
+
+## 更新日志
+### 2023/03/23  
+:fire: 删除 `build_glibc32.sh` 以及 `build_glibc64.sh`, 添加通用脚本 `build_glibc.sh`。
+
+:fire: 删除内建的 glibc 以缩小 Docker 大小与构建时间。
