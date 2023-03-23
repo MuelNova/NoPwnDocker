@@ -98,7 +98,7 @@ RUN git clone --depth 1 https://github.com/scwuaptx/Pwngdb.git ~/Pwngdb && \
 
 RUN curl -L https://raw.githubusercontent.com/hugsy/gef/main/gef.py -o  ~/.gdbinit-gef.py 
 
-COPY .gdbinit ~/
+COPY content/.gdbinit /root/.gdbinit
 
 RUN apt install -y zsh && chsh -s /bin/zsh && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh}/plugins/zsh-syntax-highlighting && \
@@ -111,7 +111,7 @@ RUN curl -LO https://starship.rs/install.sh && sh install.sh --yes && \
     rm install.sh && \
     mkdir -p ~/.config
 
-COPY starship.toml /root/.config/starship.toml
+COPY content/starship.toml /root/.config/starship.toml
 
 
 # glibc
@@ -122,7 +122,7 @@ RUN apt-get install -y \
     rm -rf /var/lib/apt/list/*
 
 WORKDIR /ctf/
-COPY build_glibc.sh ./build_glibc.sh
+COPY content/build_glibc.sh ./build_glibc.sh
 
 RUN  chmod +x build_glibc.sh
 

@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://cdn.ova.moe/img/image-20230323134431358.png">
+  <img src="images/example.png">
 </div>
 
 
