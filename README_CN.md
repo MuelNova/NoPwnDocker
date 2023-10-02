@@ -40,7 +40,7 @@ sudo docker exec -it nopwndocker:ubuntu20.04 /bin/zsh
 ```
 
 > 取决于你的电脑性能，镜像可能需要编译 30+ 分钟
-> 会消耗 17GB~ 的磁盘空间
+> 会消耗 8GB~ 的磁盘空间
 
 将你的 CTF 文件和自定义 GLIBC 放入 `challenge` 文件夹中
 

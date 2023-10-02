@@ -42,7 +42,7 @@ sudo docker exec -it nopwndocker:ubuntu20.04 /bin/zsh
 ```
 
 > It might takes 30+ minutes depends on your computer performance
-> It will use 17GB~ of your disks.
+> It will use 8GB~ of your disks.
 
 Put your challenges and custom libc into folder `challenge`
 
