@@ -18,7 +18,7 @@ ARG proxy=
 #     cd gdb-13.2 && ./configure --enable-targets=all&& make -j$(nproc) && make install -j$(nproc)
 
 
-FROM $image
+FROM $image as p
 
 ARG proxy=
 ARG python_version=3.11.5
@@ -124,13 +124,29 @@ RUN chsh -s /bin/zsh && sh -c "$(curl -fsSL https://raw.githubusercontent.com/oh
     sed -i "s?# export PATH?export PATH?g" ~/.zshrc && \
     echo "export LANG=C.UTF-8" >> ~/.zshrc
 
-RUN apt-get remove build-essential zlib1g-dev libncurses5-dev libgdbm-dev dirmngr lsb-release \
-    libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev pkg-config texinfo -y && apt-get autoremove -y && \
+RUN find /usr/local -type f -executable -exec ldd '{}' ';' \
+    | awk '/=>/ { print $(NF-1) }' \
+    | sort -u \
+    | xargs -r dpkg-query --search \
+    | cut -d: -f1 \
+    | sort -u \
+    | xargs -r apt-mark manual; \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/list/* /usr/local/rvm/gems/ruby-2.*/cache/* /tmp/* /var/tmp/*
 
 COPY content/starship.toml /root/.config/starship.toml
 COPY content/.gdbinit /root/.gdbinit
+COPY content/build_glibc.sh .
+
+FROM scratch
+# squash image
+
+ARG proxy=
+COPY --from=p / /
+WORKDIR /home/ctf
+ENV HTTP_PROXY=$proxy
+ENV HTTPS_PROXY=$proxy
 
 
 CMD [ "/bin/zsh" ]
