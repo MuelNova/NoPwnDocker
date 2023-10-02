@@ -1,141 +1,136 @@
-# Modified from `skysider/pwndocker`
+ARG image=ubuntu:20.04
+ARG proxy=
 
-#############################
-## Change the version here ##
-#############################
-FROM ubuntu:18.04
-LABEL maintainer="Miu-Nova <n@ova.moe>"
+# FROM $image as builder
 
+# ENV HTTP_PROXY=$proxy
+# ENV HTTPS_PROXY=$proxy
+# ENV TZ=Asia/Shanghai
 
-#############################
-## Change the config here  ##
-#############################
+# WORKDIR /home/ctf
 
-# proxy
-ENV HTTP_PROXY=http://172.17.0.1:7899
+# # 换源
+# RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && \
+#     sed -i 's/security.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
 
-#############################
-##       Config end        ##
-#############################
-
-
-ENV DEBIAN_FRONTEND noninteractive
-
-ENV TZ Asia/Shanghai
-RUN dpkg --add-architecture i386 && \
-    apt-get -y update && \
-    apt install -y \
-    libc6:i386 \
-    libc6-dbg:i386 \
-    libc6-dbg \
-    locales \
-    lib32stdc++6 \
-    g++-multilib \
-    cmake \
-    curl \
-    ipython3 \
-    vim \
-    net-tools \
-    iputils-ping \
-    libffi-dev \
-    libssl-dev \
-    python3-dev \
-    python3-pip \
-    build-essential \
-    ruby \
-    ruby-dev \
-    tmux \
-    strace \
-    ltrace \
-    nasm \
-    wget \
-    gdb \
-    gdb-multiarch \
-    netcat \
-    socat \
-    git \
-    patchelf \
-    gawk \
-    file \
-    python3-distutils \
-    bison \
-    rpm2cpio cpio \
-    zstd \
-    tzdata --fix-missing && \
-    rm -rf /var/lib/apt/list/*
+# RUN apt-get update && apt-get install curl xz-utils gcc make libgmp-dev g++ libncurses5-dev -y
+# RUN curl -fsSL https://ftp.gnu.org/gnu/gdb/gdb-13.2.tar.xz | tar -xJ && \
+#     cd gdb-13.2 && ./configure --enable-targets=all&& make -j$(nproc) && make install -j$(nproc)
 
 
-RUN ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata
+FROM $image
 
-RUN python3 -m pip install -U pip && \
-    python3 -m pip config set global.index-url http://pypi.tuna.tsinghua.edu.cn/simple && \
-    python3 -m pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn && \
-    python3 -m pip install --no-cache-dir \
-    ropgadget \
-    z3-solver \
-    smmap2 \
-    apscheduler \
-    ropper \
-    unicorn \
-    keystone-engine \
-    capstone \
-    angr \
-    pebble \
-    r2pipe \
-    pwntools
+ARG proxy=
+ARG python_version=3.11.5
 
-RUN gem install one_gadget seccomp-tools && rm -rf /var/lib/gems/2.*/cache/*
+ENV HTTP_PROXY=$proxy
+ENV HTTPS_PROXY=$proxy
+ENV NO_PROXY="security.ubuntu.com,mirrors.tuna.tsinghua.edu.cn"
+ENV TZ=Asia/Shanghai
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN git config --global http.proxy ${HTTP_PROXY} && \
-    git config --global https.proxy `echo ${HTTP_PROXY} | sed "s?http?https?g"`
+WORKDIR /home/nopwn
+
+# COPY --from=builder /var/lib/apt/lists/* /var/lib/apt/lists/
+# COPY --from=builder /usr/local/bin/gdb* /usr/local/bin/
+
+# 换源
+RUN sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
+    echo "Acquire::http::Proxy false;\nAcquire::https::Proxy false;" >> /etc/apt/apt.conf.d/10-no-https-proxy
+    # sed -i 's/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
+    # sed -i 's/http:/https:/g' /etc/apt/sources.list
+    
+RUN dpkg --add-architecture i386 && apt-get update && \
+    apt-get install git vim tzdata libc6:i386 \
+    libncurses5:i386 libstdc++6:i386 \
+    patchelf net-tools gnupg2 netcat socat g++-multilib lib32stdc++6 \
+    libffi-dev libssl-dev gcc-multilib make strace ltrace file \ 
+    curl zsh texinfo lsb-release \
+    build-essential zlib1g-dev libncurses5-dev libgdbm-dev dirmngr \
+    libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev pkg-config -y --fix-missing
+
+
+RUN curl -LO https://www.python.org/ftp/python/$python_version/Python-$python_version.tgz && \
+    tar -xf Python-$python_version.tgz && \
+    cd Python-$python_version/ && \
+    ./configure --enable-optimizations && \
+    make -j$(nproc) && make altinstall -j$(nproc) && \
+    make clean -j$(nproc) && cd .. && rm -rf Python-$python_version.tgz Python-$python_version && \
+    ln -sf /usr/local/bin/python$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/python3 && \
+    ln -sf /usr/local/bin/pip$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/pip3 && \
+    ln -sf /usr/local/bin/python3 /usr/local/bin/python && ln -sf /usr/local/bin/pip3 /usr/local/bin/pip
+
+RUN pip install --upgrade pip && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn && \
+    pip install --no-cache-dir pwntools ropgadget ropper
+
+RUN mkdir ~/.gnupg && if [ "$(lsb_release -rs)" != "16.04" ]; then \
+        echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf; \
+    else \ 
+        dirmngr </dev/null; \
+    fi && \
+    gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && \
+    curl -sSL https://get.rvm.io | bash -s stable && \
+    if [ "$(lsb_release -rs)" != "22.04" ]; then \
+        /bin/bash -c "source /usr/local/rvm/scripts/rvm && rvm install 2.7" && \
+        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/ruby /usr/local/bin/ruby && \
+        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/gem /usr/local/bin/gem; \
+    else \
+        cd /usr/local/src/ && curl -LO https://www.openssl.org/source/openssl-1.1.1c.tar.gz && \
+        tar -xf openssl-1.1.1c.tar.gz && cd openssl-1.1.1c && \
+        ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
+        make -j$(nproc) && make install -j$(nproc) && \
+        ln -sf /etc/ssl/certs/ certs && \
+        /bin/bash -c "source /usr/local/rvm/scripts/rvm && rvm install 2.7 --with-openssl-dir=/usr/local/ssl" && \
+        apt install openssl -y && \
+        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/ruby /usr/local/bin/ruby && \
+        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/gem /usr/local/bin/gem && \
+        echo "---\n:backtrace: false\n:bulk_threshold: 1000\n:sources:\n- http://rubygems.org/\n:update_sources: true\n:verbose: true\n:concurrent_downloads: 8" > ~/.gemrc; \
+    fi 
+
+RUN gem install one_gadget seccomp-tools && \
+    ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/one_gadget /usr/local/bin/one_gadget && \
+    ln -sf /usr/local/rvm/gems/ruby-2.*/bin/seccomp-tools /usr/local/bin/seccomp-tools
+
+# 如果是 16.04，使用 gdb-multiarch，否则编译 multiarch 版本的 gdb
+RUN curl -fsSL https://ftp.gnu.org/gnu/gdb/gdb-13.2.tar.xz | tar -xJ && \
+    cd gdb-13.2 && \
+    if [ "$(lsb_release -rs)" != "16.04" ]; then \
+        ./configure --enable-targets=all --with-python=python; \
+    else \
+        ./configure --with-python=python && \
+        apt install gdb-multiarch -y; \
+    fi && \
+    make -j$(nproc) && make install -j$(nproc) && \
+    cd .. && rm -rf gdb-13.2*
+
+COPY content/pwndbg.sh /tmp/pwndbg.sh
 RUN git clone --depth 1 https://github.com/pwndbg/pwndbg ~/pwndbg && \
-    cd ~/pwndbg && chmod +x setup.sh && ./setup.sh
-
-RUN git clone --depth 1 https://github.com/scwuaptx/Pwngdb.git ~/Pwngdb && \
+    cd ~/pwndbg && mv /tmp/pwndbg.sh install.sh && ./install.sh && \
+    git clone --depth 1 https://github.com/scwuaptx/Pwngdb.git ~/Pwngdb && \
     cd ~/Pwngdb && mv .gdbinit .gdbinit-pwngdb && \
-    sed -i "s?source ~/peda/peda.py?# source ~/peda/peda.py?g" .gdbinit-pwngdb
+    sed -i "s?source ~/peda/peda.py?# source ~/peda/peda.py?g" .gdbinit-pwngdb && \
+    curl -L https://raw.githubusercontent.com/hugsy/gef/main/gef.py -o  ~/.gdbinit-gef.py 
 
-RUN curl -L https://raw.githubusercontent.com/hugsy/gef/main/gef.py -o  ~/.gdbinit-gef.py 
 
-COPY content/.gdbinit /root/.gdbinit
-
-RUN apt install -y zsh && chsh -s /bin/zsh && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh}/plugins/zsh-syntax-highlighting && \
+# Install oh-my-zsh
+RUN chsh -s /bin/zsh && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
     git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh}/plugins/zsh-autosuggestions && \
-    echo "plugins=(git zsh-syntax-highlighting zsh-autosuggestions)" >> ~/.zshrc
-
-
-RUN curl -LO https://starship.rs/install.sh && sh install.sh --yes && \
+    echo "plugins=(git z zsh-autosuggestions sudo)" >> ~/.zshrc && \
+    curl -LO https://starship.rs/install.sh && sh install.sh --yes && \
     echo "eval \"$(starship init zsh)\"" >> ~/.zshrc && \
     rm install.sh && \
-    mkdir -p ~/.config
+    mkdir -p ~/.config && \
+    sed -i "s?# export PATH?export PATH?g" ~/.zshrc && \
+    echo "export LANG=C.UTF-8" >> ~/.zshrc
+
+RUN apt-get remove build-essential zlib1g-dev libncurses5-dev libgdbm-dev dirmngr lsb-release \
+    libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev pkg-config texinfo -y && apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/list/* /usr/local/rvm/gems/ruby-2.*/cache/* /tmp/* /var/tmp/*
 
 COPY content/starship.toml /root/.config/starship.toml
+COPY content/.gdbinit /root/.gdbinit
 
 
-# glibc
-RUN apt-get install -y \
-    gcc \
-    make \
-    libgetopt-argvfile-perl &&\
-    rm -rf /var/lib/apt/list/*
-
-WORKDIR /ctf/
-COPY content/build_glibc.sh ./build_glibc.sh
-
-RUN  chmod +x build_glibc.sh
-
-RUN git clone --depth 1 https://github.com/niklasb/libc-database.git /ctf/libc-database
-RUN git clone --depth 1 https://github.com/matrix1001/glibc-all-in-one /ctf/glibc_all_in_one && \
-    cd /ctf/glibc_all_in_one && chmod +x update_list && \
-    python3 update_list
-
-# Utilities
-RUN sed -i "s?# export PATH?export PATH?g" /root/.zshrc && \
-    echo "export LANG=C.UTF-8" >> /root/.zshrc
-
-RUN unset HTTP_PROXY
-
-
-CMD /bin/zsh
+CMD [ "/bin/zsh" ]

@@ -1,10 +1,59 @@
 version: '3'
+
+x-base-spec: &base-spec
+    build: 
+        context: .
+        args:
+            - proxy=http://host.docker.internal:7890
+    platform: linux/amd64
+    security_opt:
+        - seccomp:unconfined
+    cap_add:
+        - SYS_PTRACE
+    tty: true
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    volumes:
+        - ./challenge/:/home/nopwn
+
 services:
-    pwn:
-        container_name: ub18
-        build: .
-        image: nopwndocker/ub18.04
-        cap_add:
-            - SYS_PTRACE
-        command: /bin/zsh
-        tty: true
+    ubuntu22.04:
+        <<: *base-spec
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                - image=ubuntu:22.04
+        image: nopwndocker:ubuntu22.04
+        container_name: NoPwn2204
+
+    ubuntu20.04:
+        <<: *base-spec
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                - image=ubuntu:20.04
+        image: nopwndocker:ubuntu20.04
+        container_name: NoPwn2004
+    
+    ubuntu18.04:
+        <<: *base-spec
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                - image=ubuntu:18.04
+        image: nopwndocker:ubuntu18.04
+        container_name: NoPwn1804
+
+    ubuntu16.04:
+        <<: *base-spec
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                - image=ubuntu:16.04
+                - python_version=3.9.18
+        image: nopwndocker:ubuntu16.04
+        container_name: NoPwn1604
