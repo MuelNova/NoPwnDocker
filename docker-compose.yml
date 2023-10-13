@@ -1,10 +1,11 @@
 version: '3'
 
+x-proxy: &proxy
+    proxy: http://172.17.0.1:7899
+    # Edit here to your proxy settings or leave it blank. ( If you want to use localhost, run `ifconfig` and then find `inet` in section `docker0` )
+    # It should be `172.17.0.1` by default.
+
 x-base-spec: &base-spec
-    build: 
-        context: .
-        args:
-            - proxy=http://host.docker.internal:7890
     platform: linux/amd64
     security_opt:
         - seccomp:unconfined
@@ -23,7 +24,8 @@ services:
             context: .
             dockerfile: Dockerfile
             args:
-                - image=ubuntu:22.04
+                image: ubuntu:22.04
+                <<: *proxy
         image: nopwndocker:ubuntu22.04
         container_name: NoPwn2204
 
@@ -33,7 +35,8 @@ services:
             context: .
             dockerfile: Dockerfile
             args:
-                - image=ubuntu:20.04
+                image: ubuntu:20.04
+                <<: *proxy
         image: nopwndocker:ubuntu20.04
         container_name: NoPwn2004
     
@@ -43,7 +46,8 @@ services:
             context: .
             dockerfile: Dockerfile
             args:
-                - image=ubuntu:18.04
+                image: ubuntu:18.04
+                <<: *proxy
         image: nopwndocker:ubuntu18.04
         container_name: NoPwn1804
 
@@ -53,7 +57,8 @@ services:
             context: .
             dockerfile: Dockerfile
             args:
-                - image=ubuntu:16.04
-                - python_version=3.9.18
+                image: ubuntu:16.04
+                <<: *proxy
+                python_version: 3.9.18
         image: nopwndocker:ubuntu16.04
         container_name: NoPwn1604

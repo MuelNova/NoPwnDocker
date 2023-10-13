@@ -52,7 +52,7 @@ Put your challenges and custom libc into folder `challenge`
 git clone https://github.com/Nova-Noir/NoPwnDocker
 cd NoPwnDocker
 docker build . -t nopwndocker:ubuntu22.04 \
-       --build-arg image=ubuntu22.04 --build-arg proxy=http://172.17.0.1:7890 --build-arg python-version=3.11.5
+       --build-arg image=ubuntu:22.04 --build-arg proxy=http://172.17.0.1:7890 --build-arg python-version=3.11.5
 docker run -it \
            --platform linux/amd64 \
            --security-opt seccomp:unconfined \

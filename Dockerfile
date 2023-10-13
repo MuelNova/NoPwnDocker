@@ -1,5 +1,4 @@
 ARG image=ubuntu:20.04
-ARG proxy=
 
 FROM $image as builder
 
@@ -88,38 +87,39 @@ RUN pip install --upgrade pip && pip config set global.index-url https://pypi.tu
     pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn && \
     pip install --no-cache-dir pwntools ropgadget ropper
 
-RUN mkdir ~/.gnupg && if [ "$(lsb_release -rs)" != "16.04" ]; then \
+RUN if [ "$(lsb_release -rs)" = "22.04" ]; then \
+        apt-get install -y software-properties-common && \
+        apt-add-repository -y ppa:rael-gc/rvm && \
+        apt-get update && apt install -y --allow-downgrades libssl-dev=1.1.1l-1ubuntu1.4 ca-certificates; \
+    fi && \
+    mkdir ~/.gnupg && \
+    if [ "$(lsb_release -rs)" != "16.04" ]; then \
         echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf; \
     else \ 
         dirmngr </dev/null; \
     fi && \
     gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && \
     curl -ksSL https://get.rvm.io | bash -s stable && \
-    if [ "$(lsb_release -rs)" != "22.04" ]; then \
-        /bin/bash -c "source /usr/local/rvm/scripts/rvm && rvm install 2.7" && \
-        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/ruby /usr/local/bin/ruby && \
-        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/gem /usr/local/bin/gem; \
-    else \
-        apt-get install build-essential perl zlib1g-dev -y && \
-        cd /usr/local/src/ && curl -LO https://www.openssl.org/source/openssl-1.1.1c.tar.gz && \
-        tar -xf openssl-1.1.1c.tar.gz && cd openssl-1.1.1c && \
-        ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
-        make -j$(nproc) && make install -j$(nproc) && \
-        ln -sf /etc/ssl/certs/ certs && \
-        /bin/bash -c "source /usr/local/rvm/scripts/rvm && rvm install 2.7 --with-openssl-dir=/usr/local/ssl" && \
-        apt install openssl -y && \
-        rm -rf /usr/local/src/openssl-1.1.1c.tar.gz /usr/local/src/openssl-1.1.1c && \
-        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/ruby /usr/local/bin/ruby && \
-        ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/gem /usr/local/bin/gem && \
-        echo "---\n:backtrace: false\n:bulk_threshold: 1000\n:sources:\n- http://rubygems.org/\n:update_sources: true\n:verbose: true\n:concurrent_downloads: 8" > ~/.gemrc; \
-    fi 
+    /bin/bash -c "source /usr/local/rvm/scripts/rvm && rvm install 2.7" && \
+    ln -sf /usr/local/rvm/rubies/ruby-2.*/bin/ruby /usr/local/bin/ruby && \
+    ln -sf /usr/local/rvm/rubies/ruby-2.*/bin/gem /usr/local/bin/gem && \
+    if [ "$(lsb_release -rs)" = "22.04" ]; then \
+        # Revoke changes.
+        apt-add-repository -ry ppa:rael-gc/rvm && \
+        apt-get remove -y software-properties-common && \
+        apt-get install -y libssl-dev; \
+    fi
 
 RUN gem install one_gadget seccomp-tools && \
-    ln -sf /usr/local/rvm/rubies/ruby-2.7.*/bin/one_gadget /usr/local/bin/one_gadget && \
+    ln -sf /usr/local/rvm/rubies/ruby-2.*/bin/one_gadget /usr/local/bin/one_gadget && \
     ln -sf /usr/local/rvm/gems/ruby-2.*/bin/seccomp-tools /usr/local/bin/seccomp-tools
 
 COPY content/pwndbg.sh /tmp/pwndbg.sh
-RUN git clone --depth 1 https://github.com/pwndbg/pwndbg ~/pwndbg && \
+
+RUN if [ -n "$proxy" ]; then \
+    git config --global http.proxy $proxy; \
+    git config --global https.proxy $proxy; \
+    fi && git clone --depth 1 https://github.com/pwndbg/pwndbg ~/pwndbg && \
     cd ~/pwndbg && mv /tmp/pwndbg.sh install.sh && ./install.sh && \
     git clone --depth 1 https://github.com/scwuaptx/Pwngdb.git ~/Pwngdb && \
     cd ~/Pwngdb && mv .gdbinit .gdbinit-pwngdb && \
