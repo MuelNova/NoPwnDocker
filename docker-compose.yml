@@ -15,7 +15,7 @@ x-base-spec: &base-spec
     extra_hosts:
         - "host.docker.internal:host-gateway"
     volumes:
-        - ./challenge/:/home/nopwn
+        - ./challenge/:/home/ctf/challenge  # change here to your challenge folder
 
 services:
     ubuntu22.04:
@@ -25,6 +25,7 @@ services:
             dockerfile: Dockerfile
             args:
                 image: ubuntu:22.04
+                # BUILD_MULTI: true
                 <<: *proxy
         image: nopwndocker:ubuntu22.04
         container_name: NoPwn2204
@@ -62,3 +63,5 @@ services:
                 python_version: 3.9.18
         image: nopwndocker:ubuntu16.04
         container_name: NoPwn1604
+
+        

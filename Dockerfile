@@ -5,6 +5,7 @@ FROM $image as builder
 WORKDIR /home/ctf
 ARG proxy=
 ARG python_version=3.11.5
+ARG BUILD_MULTI=false
 
 ENV HTTP_PROXY=$proxy
 ENV HTTPS_PROXY=$proxy
@@ -20,31 +21,20 @@ RUN curl -LO https://www.python.org/ftp/python/$python_version/Python-$python_ve
     tar -xf Python-$python_version.tgz && \
     cd Python-$python_version/ && \
     ./configure --enable-optimizations && \
-    make -j$(nproc) && make altinstall -j$(nproc) && \
-    make clean -j$(nproc) && cd .. && rm -rf Python-$python_version.tgz Python-$python_version && \
-    ln -sf /usr/local/bin/python$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/python3 && \
-    ln -sf /usr/local/bin/pip$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/pip3 && \
-    ln -sf /usr/local/bin/python3 /usr/local/bin/python && ln -sf /usr/local/bin/pip3 /usr/local/bin/pip
+    mkdir /root/build && \
+    make -j$(nproc) && make altinstall -j$(nproc) DESTDIR=/root/build
 
 RUN curl -fsSL https://ftp.gnu.org/gnu/gdb/gdb-13.2.tar.xz | tar -xJ && \
     cd gdb-13.2 && \
-    if [ "$(lsb_release -rs)" != "16.04" ]; then \
+    if [ "$(lsb_release -rs)" != "16.04" ] && [ "$BUILD_MULTI" = "true" ]; then \
         ./configure --enable-targets=all --with-python=python; \
     else \
         ./configure --with-python=python; \
     fi && \
-    make -j$(nproc) && make install -j$(nproc)
-
-RUN mkdir -p NoPwn/DEBIAN && mkdir -p NoPwn/usr/local/bin && mkdir -p NoPwn/usr/local/lib && mkdir -p NoPwn/usr/local/include && mkdir -p NoPwn/usr/share && \
-    cp -r /usr/local/bin/python$(echo $python_version | awk -F. '{print $1"."$2}') NoPwn/usr/local/bin/ && \
-    cp -r /usr/local/bin/pip$(echo $python_version | awk -F. '{print $1"."$2}') NoPwn/usr/local/bin/ && \
-    cp -r /usr/local/lib/python$(echo $python_version | awk -F. '{print $1"."$2}') NoPwn/usr/local/lib/ && \
-    cp -r /usr/local/include/python$(echo $python_version | awk -F. '{print $1"."$2}') NoPwn/usr/local/include/ && \
-    cp -r /usr/local/bin/gdb* NoPwn/usr/local/bin/ && \
-    cp -r /usr/local/include/gdb NoPwn/usr/local/include/ && \
-    touch NoPwn/DEBIAN/control && \
-    echo "Package: NoPwn\nVersion: $python_version\nSection: base\nPriority: optional\nArchitecture: amd64\nEssential: no\nMaintainer: NoPwn\nDescription: NoPwn" >> NoPwn/DEBIAN/control && \
-    dpkg-deb -b NoPwn
+    # gdb cannot specify the python in /root/build, so we have to copy it.
+    mkdir -p /root/build && cp -r /root/build/usr / && \
+    ln -sf /usr/local/bin/python$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/python && \
+    make -j$(nproc) && make install -j$(nproc) DESTDIR=/root/build
 
 
 FROM $image as p
@@ -60,10 +50,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /home/nopwn
 
-# COPY --from=builder /var/lib/apt/lists/* /var/lib/apt/lists/
-# COPY --from=builder /usr/local/bin/gdb* /usr/local/bin/
-
-# 换源
+# # 换源
 RUN sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
     echo "Acquire::http::Proxy false;\nAcquire::https::Proxy false;" >> /etc/apt/apt.conf.d/10-no-https-proxy
     # sed -i 's/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
@@ -73,17 +60,15 @@ RUN dpkg --add-architecture i386 && apt-get update && \
     apt-get install git vim tzdata libc6:i386 \
     libncurses5:i386 libstdc++6:i386 \
     patchelf net-tools gnupg2 netcat socat g++-multilib lib32stdc++6 \
-    libffi-dev libssl-dev gcc-multilib make strace ltrace file \ 
+    libffi-dev libssl-dev gcc-multilib make strace ltrace file sudo elfutils \ 
     curl zsh lsb-release -y --fix-missing
 
-COPY --from=builder /home/ctf/NoPwn.deb .
+COPY --from=builder /root/build/ /
 
-RUN dpkg -i NoPwn.deb && rm NoPwn.deb && \
-    ln -sf /usr/local/bin/python$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/python3 && \
+RUN ln -sf /usr/local/bin/python$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/python3 && \
     ln -sf /usr/local/bin/pip$(echo $python_version | awk -F. '{print $1"."$2}') /usr/local/bin/pip3 && \
-    ln -sf /usr/local/bin/python3 /usr/local/bin/python && ln -sf /usr/local/bin/pip3 /usr/local/bin/pip
-
-RUN pip install --upgrade pip && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    ln -sf /usr/local/bin/python3 /usr/local/bin/python && ln -sf /usr/local/bin/pip3 /usr/local/bin/pip && \
+    pip install --upgrade pip && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
     pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn && \
     pip install --no-cache-dir pwntools ropgadget ropper
 
@@ -119,18 +104,18 @@ COPY content/pwndbg.sh /tmp/pwndbg.sh
 RUN if [ -n "$proxy" ]; then \
     git config --global http.proxy $proxy; \
     git config --global https.proxy $proxy; \
-    fi && git clone --depth 1 https://github.com/pwndbg/pwndbg ~/pwndbg && \
-    cd ~/pwndbg && mv /tmp/pwndbg.sh install.sh && ./install.sh && \
-    git clone --depth 1 https://github.com/scwuaptx/Pwngdb.git ~/Pwngdb && \
-    cd ~/Pwngdb && mv .gdbinit .gdbinit-pwngdb && \
-    sed -i "s?source ~/peda/peda.py?# source ~/peda/peda.py?g" .gdbinit-pwngdb && \
-    curl -L https://raw.githubusercontent.com/hugsy/gef/main/gef.py -o  ~/.gdbinit-gef.py 
+    fi && git clone --depth 1 https://github.com/pwndbg/pwndbg /usr/local/pwndbg && \
+    cd /usr/local/pwndbg && mv /tmp/pwndbg.sh install.sh && ./install.sh && \
+    git clone --depth 1 https://github.com/scwuaptx/Pwngdb.git /usr/local/Pwngdb && \
+    cd /usr/local/Pwngdb && mv .gdbinit .gdbinit-pwngdb && \
+    sed -i "s?source ~/peda/peda.py?# source /usr/local/peda/peda.py?g" .gdbinit-pwngdb && \
+    curl -L https://raw.githubusercontent.com/hugsy/gef/main/gef.py -o  /usr/local/.gdbinit-gef.py 
 
 
 # Install oh-my-zsh
 RUN chsh -s /bin/zsh && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
     git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh}/plugins/zsh-autosuggestions && \
-    echo "plugins=(git z zsh-autosuggestions sudo)" >> ~/.zshrc && \
+    sed -i '/^plugins=(/ s/)/ zsh-autosuggestions z sudo)/' ~/.zshrc && \
     curl -LO https://starship.rs/install.sh && sh install.sh --yes && \
     echo "eval \"$(starship init zsh)\"" >> ~/.zshrc && \
     rm install.sh && \
@@ -153,6 +138,11 @@ COPY content/starship.toml /root/.config/starship.toml
 COPY content/.gdbinit /root/.gdbinit
 COPY content/build_glibc.sh .
 
+RUN cp -r /root/.gdbinit /root/.config /root/.oh-my-zsh /root/.zshrc /etc/skel/ && \
+    adduser --disabled-password --gecos '' --shell /bin/zsh ctf && \
+    echo "ctf ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+
 FROM scratch
 # squash image
 
@@ -161,6 +151,7 @@ COPY --from=p / /
 WORKDIR /home/ctf
 ENV HTTP_PROXY=$proxy
 ENV HTTPS_PROXY=$proxy
+USER ctf
 
 
 CMD [ "/bin/zsh" ]

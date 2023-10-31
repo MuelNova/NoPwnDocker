@@ -56,7 +56,7 @@ docker run -it \
            --security-opt seccomp:unconfined \
            --cap-add SYS_PTRACE \
            --add-host host.docker.internal:host-gateway \
-           -v "$(pwd)/challenge:/home/nopwn" \
+           -v "$(pwd):/home/ctf/challenges" \
            --tty nopwndocker:ubuntu22.04
 ```
 

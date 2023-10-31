@@ -58,12 +58,16 @@ docker run -it \
            --security-opt seccomp:unconfined \
            --cap-add SYS_PTRACE \
            --add-host host.docker.internal:host-gateway \
-           -v "$(pwd)/challenge:/home/nopwn" \
+           -v "$(pwd):/home/ctf/challenge" \
            --tty nopwndocker:ubuntu22.04
 ```
 
 
 ## Configuration
+
+### docker-compose.yml
+
+- BUILD_MULTI: set `true` to enable NoPwnDocker compiling multiarch GDB (WILL OCCUPY 2G~ DISK)
 
 There's not much can be modified. But you do can change something.
 
@@ -97,6 +101,11 @@ see https://patchwork.ozlabs.org/project/glibc/patch/20170623161158.GA5384@gmail
 
 
 ## Update Log
+
+### 2023/10/31
+:bug: GDB is now fully copied from `builder`
+:bug: zsh plugins works normally now
+:children_crossing: New user will use the same configuration now
 
 ### 2023/10/02
 

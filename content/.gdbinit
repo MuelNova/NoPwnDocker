@@ -1,12 +1,12 @@
 define init-pwndbg
-source ~/pwndbg/gdbinit.py
+source /usr/local/pwndbg/gdbinit.py
 end
 document init-pwndbg
 Initializes PwnDBG
 end
 
 define init-gef
-source ~/.gdbinit-gef.py
+source /usr/local/.gdbinit-gef.py
 end
 document init-gef
 Initializes GEF (GDB Enhanced Features)
@@ -20,8 +20,8 @@ end
 end
 
 # Default Settings 
-source ~/pwndbg/gdbinit.py
-source ~/Pwngdb/pwngdb.py
-source ~/Pwngdb/angelheap/gdbinit.py
+source /usr/local/pwndbg/gdbinit.py
+source /usr/local/Pwngdb/pwngdb.py
+source /usr/local/Pwngdb/angelheap/gdbinit.py
 
 
