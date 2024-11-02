@@ -1,67 +1,94 @@
-version: '3'
+# 通用的构建参数
+x-build-args: &build-args
+  # 代理地址，在 Docker 中使用 host.docker.internal 访问主机
+  # PROXY: "http://host.docker.internal:7890"
+  PROXY: ""
+  NO_PROXY: "localhost,127.0.0.1"
 
-x-proxy: &proxy
-    proxy: http://172.17.0.1:7899
-    # Edit here to your proxy settings or leave it blank. ( If you want to use localhost, run `ifconfig` and then find `inet` in section `docker0` )
-    # It should be `172.17.0.1` by default.
-
-x-base-spec: &base-spec
-    platform: linux/amd64
-    security_opt:
-        - seccomp:unconfined
-    cap_add:
-        - SYS_PTRACE
-    tty: true
-    extra_hosts:
-        - "host.docker.internal:host-gateway"
-    volumes:
-        - ./challenge/:/home/ctf/challenge  # change here to your challenge folder
+# 通用的服务配置
+x-common: &common
+  # volumes:
+  # - ./challenges:/ctf  # 修改为你的目录
+  cap_add:
+    - SYS_PTRACE
+  security_opt:
+    - seccomp=unconfined
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
 
 services:
-    ubuntu22.04:
-        <<: *base-spec
-        build:
-            context: .
-            dockerfile: Dockerfile
-            args:
-                image: ubuntu:22.04
-                # BUILD_MULTI: true
-                <<: *proxy
-        image: nopwndocker:ubuntu22.04
-        container_name: NoPwn2204
+  ubuntu24.04:
+    build:
+      context: .
+      args:
+        IMAGE: ubuntu:24.04
+        <<: *build-args
+        PYTHON_VERSION: 3.12.0
+        GDB_VERSION: 15.2
+        GDB_MULTIARCH: no
+        RUBY_VERSION: 3.2.6
+    <<: *common
+    image: nopwnv2:24.04
+    hostname: NoPwnV2_24.04
+    container_name: NoPwn2404
 
-    ubuntu20.04:
-        <<: *base-spec
-        build:
-            context: .
-            dockerfile: Dockerfile
-            args:
-                image: ubuntu:20.04
-                <<: *proxy
-        image: nopwndocker:ubuntu20.04
-        container_name: NoPwn2004
-    
-    ubuntu18.04:
-        <<: *base-spec
-        build:
-            context: .
-            dockerfile: Dockerfile
-            args:
-                image: ubuntu:18.04
-                <<: *proxy
-        image: nopwndocker:ubuntu18.04
-        container_name: NoPwn1804
+  ubuntu22.04:
+    build:
+      context: .
+      args:
+        IMAGE: ubuntu:22.04
+        <<: *build-args
+        PYTHON_VERSION: 3.12.0
+        GDB_VERSION: 15.2
+        GDB_MULTIARCH: no
+        RUBY_VERSION: 3.2.6
+    <<: *common
+    image: nopwnv2:22.04
+    hostname: NoPwnV2_22.04
+    container_name: NoPwn2204
 
-    ubuntu16.04:
-        <<: *base-spec
-        build:
-            context: .
-            dockerfile: Dockerfile
-            args:
-                image: ubuntu:16.04
-                <<: *proxy
-                python_version: 3.9.18
-        image: nopwndocker:ubuntu16.04
-        container_name: NoPwn1604
+  ubuntu20.04:
+    build:
+      context: .
+      args:
+        IMAGE: ubuntu:20.04
+        <<: *build-args
+        PYTHON_VERSION: 3.12.0
+        GDB_VERSION: 15.2
+        GDB_MULTIARCH: no
+        RUBY_VERSION: 3.2.6
+    <<: *common
+    image: nopwnv2:20.04
+    hostname: NoPwnV2_20.04
+    container_name: NoPwn2004
 
-        
+  ubuntu18.04:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu1804
+      args:
+        <<: *build-args
+        PYTHON_VERSION: 3.12.0
+        GDB_VERSION: 15.2
+        GDB_MULTIARCH: no
+        RUBY_VERSION: 3.2.6
+        CURSES_VERSION: 6.4
+    <<: *common
+    image: nopwnv2:18.04
+    hostname: NoPwnV2_18.04
+    container_name: NoPwn1804
+
+  ubuntu16.04:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu1604
+      args:
+        <<: *build-args
+        PYTHON_VERSION: 3.12.0
+        GDB_VERSION: 13.2
+        GDB_MULTIARCH: no
+        RUBY_VERSION: 3.2.6
+    <<: *common
+    image: nopwnv2:16.04
+    hostname: NoPwnV2_16.04
+    container_name: NoPwn1604

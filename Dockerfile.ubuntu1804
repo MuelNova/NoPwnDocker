@@ -1,5 +1,4 @@
-ARG IMAGE=ubuntu:20.04
-FROM ${IMAGE} AS base
+FROM ubuntu:18.04 AS base
 
 # Args
 ARG PROXY
@@ -29,6 +28,7 @@ RUN apt-get update && apt-get install -y build-essential wget
 # --- Stage 2: Build Python ---
 FROM base AS python-build
 ARG PYTHON_VERSION=3.12.0
+ARG CURSES_VERSION=6.4
 
 RUN apt-get install -y zlib1g-dev \
     libssl-dev \
@@ -37,11 +37,20 @@ RUN apt-get install -y zlib1g-dev \
     libbz2-dev \
     liblzma-dev \
     libreadline-dev \
-    libncursesw5-dev \
     libgdbm-dev \
     libnss3-dev \
-    uuid-dev && \
-    wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+    uuid-dev
+
+RUN wget https://ftp.gnu.org/pub/gnu/ncurses/ncurses-${CURSES_VERSION}.tar.gz && \
+    tar xzf ncurses-${CURSES_VERSION}.tar.gz && \
+    cd ncurses-${CURSES_VERSION} && \
+    ./configure --with-shared --with-termlib && \
+    make -j$(nproc) && \
+    make install && \
+    cd .. && \
+    rm -rf ncurses-${CURSES_VERSION}*
+
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
     tar xzf Python-${PYTHON_VERSION}.tgz && \
     cd Python-${PYTHON_VERSION} && \
     ./configure --enable-optimizations && \
@@ -50,14 +59,13 @@ RUN apt-get install -y zlib1g-dev \
     cd .. && \
     rm -rf Python-${PYTHON_VERSION}*
 
-
 # --- Stage 3: gdb ---
 FROM python-build AS gdb-build
 
 ARG GDB_VERSION=15.2
 ARG GDB_MULTIARCH=no
 
-RUN apt-get install -y libgmp-dev libmpfr-dev&& \
+RUN apt-get install -y libgmp-dev libmpfr-dev libncurses-dev && \
     wget https://ftp.gnu.org/gnu/gdb/gdb-${GDB_VERSION}.tar.gz && \
     tar xzf gdb-${GDB_VERSION}.tar.gz && \
     cd gdb-${GDB_VERSION} && \
@@ -98,12 +106,30 @@ RUN wget https://cache.ruby-lang.org/pub/ruby/${RUBY_VERSION%.*}/ruby-${RUBY_VER
     rm -rf ruby-${RUBY_VERSION}* && \
     rm -rf /var/lib/apt/lists/*
 
-# --- Stage 5: Final ---
+# --- Stage 5: Fish ---
+FROM base AS fish-build
+
+ARG FISH_VERSION=3.7.0
+
+RUN apt-get install -y cmake libncurses5-dev libpcre2-dev && \
+wget https://github.com/fish-shell/fish-shell/releases/download/${FISH_VERSION}/fish-${FISH_VERSION}.tar.xz && \
+    tar -xf fish-${FISH_VERSION}.tar.xz && \
+    cd fish-${FISH_VERSION} && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd ../.. && \
+    rm -rf fish-${FISH_VERSION}* && \
+    rm -rf /var/lib/apt/lists/*
+
+# --- Stage 6: Final ---
 FROM base AS final
 
 COPY --from=gdb-build /usr/local /usr/local
 COPY --from=ruby-build /usr/local /usr/local
-
+COPY --from=fish-build /usr/local /usr/local
 RUN apt-get install -y libyaml-0.2 git tmux && \
     if [ "$HTTP_PROXY" != "" ]; then \
         echo "Using proxy: ${HTTP_PROXY}" && \
@@ -121,7 +147,7 @@ RUN git clone --depth 1 https://github.com/pwndbg/pwndbg ~/.local/pwndbg && \
     mkdir -p ~/.local/gef && \
     mv /root/.gdbinit-gef.py ~/.local/gef/gef.py
 
-RUN apt-get install -y fish curl && \
+RUN apt-get install -y curl libpcre2-32-0 && \
     mkdir -p ~/.config/fish && \
     # 安装 fisher 包管理器
     wget -qO- https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | \
@@ -130,7 +156,7 @@ RUN apt-get install -y fish curl && \
     fish -c "fisher install jethrokuan/z" && \
     fish -c "fisher install PatrickF1/fzf.fish" && \
     # 设置为默认 shell
-    chsh -s /usr/bin/fish
+    chsh -s /usr/local/bin/fish
 
 # ADD YOUR PACKAGES HERE
 # RUN apt-get install -y <your-package> --no-install-recommends
@@ -152,4 +178,4 @@ COPY scripts/.gdbinit /root/.gdbinit
 COPY scripts/config.fish /root/.config/fish/config.fish
 COPY scripts/.tmux.conf /root/.tmux.conf
 
-CMD ["/usr/bin/fish"]
+CMD ["/usr/local/bin/fish"]

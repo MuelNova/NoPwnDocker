@@ -1,117 +1,105 @@
-<div align="center">
-  <img src="images/example.png">
-</div>
-
-
-<div align="center">
-
 # NoPwnDocker
 
-> **ENGLISH | [中文](README_CN.md)**
+Ubuntu16.04 到 Ubuntu24.04，一键 Pwn Docker 环境
 
-<a href="./LICENSE">
-    <img src="https://img.shields.io/github/license/Nova-Noir/NoPwnDocker.svg" alt="license">
-</a>
+## 程序
 
-</div>
+| 程序名称                                                    | 说明                                          | 快捷键/用法                    |
+| ----------------------------------------------------------- | --------------------------------------------- | ------------------------------ |
+| python                                                      | python3.12                                    | `python`                       |
+| [pwndbg](https://github.com/pwndbg/pwndbg)                  | GDB 调试增强插件                              | `gdb`                          |
+| [Pwngdb](https://github.com/scwuaptx/Pwngdb)                | GDB 调试增强插件                              | `gdb`                          |
+| [gef](https://github.com/bata24/gef)                        | GDB 调试增强插件，bata24 魔改，对内核支持更强 | `gdb`，输入 `gef-init`         |
+| [one_gadget](https://github.com/david942j/one_gadget)       | 快速查找 libc 中的 execve("/bin/sh")          | `one_gadget libc.so.6`         |
+| [ROPgadget](https://github.com/JonathanSalwan/ROPgadget)    | ROP gadget 查找工具                           | `ROPgadget --binary ./program` |
+| [pwntools](https://github.com/Gallopsled/pwntools)          | PWN 开发框架                                  | Python 中 `from pwn import *`  |
+| [seccomp-tools](https://github.com/david942j/seccomp-tools) | Seccomp 规则分析工具                          | `seccomp-tools dump ./program` |
+| [ropper](https://github.com/sashs/Ropper)                   | 另一个 ROP gadget 查找工具                    | `ropper -f ./program`          |
+| [tmux](https://github.com/tmux/tmux)                        | 终端复用工具                                  | `tmux` (前缀键 Ctrl+a)         |
+| [fish](https://github.com/fish-shell/fish-shell)            | 友好的交互式 shell                            | 默认 shell                     |
+| [z](https://github.com/jethrokuan/z)                        | 快速目录跳转                                  | `z 目录名`                     |
+| [fzf.fish](https://github.com/PatrickF1/fzf.fish)           | 模糊查找增强                                  | Ctrl+R (历史), Ctrl+F (文件)   |
 
+## 安装
 
-## Included
-
-- [zsh](https://www.zsh.org/)
-- [oh-my-zsh](https://ohmyz.sh/)
-- [starship](https://starship.rs/)
-- [pwntools](https://github.com/Gallopsled/pwntools)  —— CTF framework and exploit development library
-- [gef](https://github.com/hugsy/gef)
-- [pwndbg](https://github.com/pwndbg/pwndbg)  —— a GDB plug-in that makes debugging with GDB suck less, with a focus on features needed by low-level software developers, hardware hackers, reverse-engineers and exploit developers
-- [pwngdb](https://github.com/scwuaptx/Pwngdb) —— gdb for pwn
-- [ROPgadget](https://github.com/JonathanSalwan/ROPgadget)  —— facilitate ROP exploitation tool
-- [one_gadget](https://github.com/david942j/one_gadget) —— A searching one-gadget of execve('/bin/sh', NULL, NULL) tool for amd64 and i386
-- [seccomp-tools](https://github.com/david942j/seccomp-tools) —— Provide powerful tools for seccomp analysis
-- [ltrace](https://linux.die.net/man/1/ltrace)      —— trace library function call
-- [strace](https://linux.die.net/man/1/strace)     —— trace system call
-
-## How to use?
-
-### Compose
 ```bash
-git clone https://github.com/Nova-Noir/NoPwnDocker
+git clone https://github.com/MuelNova/NoPwnDocker
 cd NoPwnDocker
-sudo docker compose up -d
-sudo docker exec -it nopwndocker:ubuntu20.04 /bin/zsh
+docker compose build
+# or
+# docker compose up -d
 ```
 
-> It might takes 30+ minutes depends on your computer performance
-> It will use 8GB~ of your disks.
+## 运行
 
-Put your challenges and custom libc into folder `challenge`
-
-### Manual
+如果使用 docker compose:
 
 ```bash
-git clone https://github.com/Nova-Noir/NoPwnDocker
-cd NoPwnDocker
-docker build . -t nopwndocker:ubuntu22.04 \
-       --build-arg image=ubuntu:22.04 --build-arg proxy=http://172.17.0.1:7890 --build-arg python-version=3.11.5
-docker run -it \
-           --platform linux/amd64 \
+docker exec -it NoPwn2404
+```
+
+如果仅运行
+
+```bash
+docker run -it --rm \  # 如果需要持久化，则去掉 --rm
            --security-opt seccomp:unconfined \
            --cap-add SYS_PTRACE \
            --add-host host.docker.internal:host-gateway \
-           -v "$(pwd):/home/ctf/challenge" \
-           --tty nopwndocker:ubuntu22.04
+           -v "$(pwd):/ctf" nopwnv2:18.04  # 或是其他版本
 ```
 
+## 配置
 
-## Configuration
+ Docker 中 Python GDB 版本等均可自定义，至于 Proxy，思想实验觉得是可以设置的，未实验。
 
-### docker-compose.yml
+`docker-compose.ymlw`
 
-- BUILD_MULTI: set `true` to enable NoPwnDocker compiling multiarch GDB (WILL OCCUPY 2G~ DISK)
+```yaml
+# 通用的构建参数
+x-build-args: &build-args
+  # 代理地址，在 Docker 中使用 host.docker.internal 访问主机
+  # PROXY: "http://host.docker.internal:7890"
+  PROXY: ""
+  NO_PROXY: "localhost,127.0.0.1"
 
-There's not much can be modified. But you do can change something.
+# 通用的服务配置
+x-common: &common
+  volumes:
+    # - ./challenges:/ctf  # 修改为你的目录
+  cap_add:
+    - SYS_PTRACE
+  security_opt:
+    - seccomp=unconfined
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
 
-- open `Dockerfile`, you can change the version and proxy.
-- open `docker-compose.yml`, you can change the container name.
-- modify `starship.toml` to use your own starship style.
-- modify `.gdbinit` to use your own gdbinit config.
+services:
+  ubuntu24.04:
+    build:
+      context: .
+      args:
+        IMAGE: ubuntu:24.04
+        <<: *build-args
+        PYTHON_VERSION: 3.12.0
+        GDB_VERSION: 15.2
+        GDB_MULTIARCH: no
+        RUBY_VERSION: 3.2.6
+    <<: *common
+    image: nopwnv2:24.04
+    hostname: NoPwnV2_24.04
+    container_name: NoPwn2404
+```
 
+对于额外的包，可以找到对应的 `Dockerfile`，在最下面添加。
 
-## Usage or features
+修改后，重新编译即可
 
-### gdb
+```bash
+docker compose build ubuntu24.04
+```
 
-`init-gef`、`init-pwndbg` to load different gdb plugin.
+## 信息
 
-### zsh
+在 `amd R7 8845H + 32G RAM`，代理网络速度大约在 `7Mb/s` 的情况下，总共花费大约 `1600s` 完成镜像编译。
 
-`zsh-autosuggestions` plugins
-
-### build_glibc
-
-A shell file to build glibc source with debug in one command.
-`bash ~/build_glibc.sh -h`
-
-> There could be some bug when building older version of glibc.
-> Check below to see the solution. (at least for me)
- 
-#### `loc1@GLIBC_2.2.5' can't be versioned to common symbol 'loc1'
- 
-see https://patchwork.ozlabs.org/project/glibc/patch/20170623161158.GA5384@gmail.com/
-
-
-## Update Log
-
-### 2023/10/31
-:bug: GDB is now fully copied from `builder`
-:bug: zsh plugins works normally now
-:children_crossing: New user will use the same configuration now
-
-### 2023/10/02
-
-:recycle: Refactor Dockerfile and docker-compose.yml
-
-### 2023/03/23  
-
-:fire: Remove `build_glibc32.sh` and `build_glibc64.sh`, add `build_glibc.sh` for general usage. 
-:fire: Remove built-in glibc to reduce the docker size and build time.
+每个镜像在 `2.35GB ~ 2.77GB` 之间。
