@@ -10,23 +10,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        version:
+          - "24.04"
+          - "22.04"
+          - "20.04"
+          - "18.04"
+          - "16.04"
+        file:
+          - "Dockerfile"
+          - "Dockerfile"
+          - "Dockerfile"
+          - "Dockerfile.ubuntu1804"
+          - "Dockerfile.ubuntu1604"
+      max-parallel: 5
+
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build 24.04
-      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:24.04 --tag nopwnv2:2404-$(date +%s)
-
-    - name: Build 22.04
-      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:22.04 --tag nopwnv2:2204-$(date +%s)
-
-    - name: Build 20.04
-      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:20.04 --tag nopwnv2:2004-$(date +%s)
-
-    - name: Build 18.04
-      run: docker build . --file Dockerfile.ubuntu1804 --tag nopwnv2:1804-$(date +%s)
-
-    - name: Build 16.04
-      run: docker build . --file Dockerfile.ubuntu1604 --tag nopwnv2:1604-$(date +%s)
-
-
-
+    - name: Build Ubuntu ${{ matrix.version }}
+      run: docker build . --file ${{ matrix.file }} --build-arg IMAGE=ubuntu:${{ matrix.version }} --tag nopwnv2:${{ matrix.version }}-$(date +%s)
