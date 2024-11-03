@@ -14,19 +14,19 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Build 24.04
-      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:24.04 --tag NoPwnV2:2404-$(date +%s)
+      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:24.04 --tag nopwnv2:2404-$(date +%s)
 
     - name: Build 22.04
-      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:22.04 --tag NoPwnV2:2204-$(date +%s)
+      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:22.04 --tag nopwnv2:2204-$(date +%s)
 
     - name: Build 20.04
-      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:20.04 --tag NoPwnV2:2004-$(date +%s)
+      run: docker build . --file Dockerfile --build-arg IMAGE=ubuntu:20.04 --tag nopwnv2:2004-$(date +%s)
 
     - name: Build 18.04
-      run: docker build . --file Dockerfile.ubuntu1804 --tag NoPwnV2:1804-$(date +%s)
+      run: docker build . --file Dockerfile.ubuntu1804 --tag nopwnv2:1804-$(date +%s)
 
     - name: Build 16.04
-      run: docker build . --file Dockerfile.ubuntu1604 --tag NoPwnV2:1604-$(date +%s)
+      run: docker build . --file Dockerfile.ubuntu1604 --tag nopwnv2:1604-$(date +%s)
 
 
 
