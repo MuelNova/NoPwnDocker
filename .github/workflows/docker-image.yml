@@ -12,18 +12,17 @@ jobs:
 
     strategy:
       matrix:
-        version:
-          - "24.04"
-          - "22.04"
-          - "20.04"
-          - "18.04"
-          - "16.04"
-        file:
-          - "Dockerfile"
-          - "Dockerfile"
-          - "Dockerfile"
-          - "Dockerfile.ubuntu1804"
-          - "Dockerfile.ubuntu1604"
+        include:
+          - version: "24.04"
+            file: "Dockerfile"
+          - version: "22.04"
+            file: "Dockerfile"
+          - version: "20.04"
+            file: "Dockerfile"
+          - version: "18.04"
+            file: "Dockerfile.ubuntu1804"
+          - version: "16.04"
+            file: "Dockerfile.ubuntu1604"
       max-parallel: 5
 
     steps:
