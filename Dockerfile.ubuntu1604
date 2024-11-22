@@ -139,16 +139,15 @@ wget https://github.com/fish-shell/fish-shell/releases/download/${FISH_VERSION}/
     rm -rf /var/lib/apt/lists/*
 
 # --- Stage 6: Final ---
-FROM base AS final
+FROM gdb-build AS final
 
-COPY --from=gdb-build /usr/local /usr/local
 COPY --from=ruby-build /usr/local /usr/local
 COPY --from=fish-build /usr/local /usr/local
 
 RUN ln -s /usr/local/bin/python3.12 /usr/local/bin/python3 && \
     ln -s /usr/local/bin/pip3.12 /usr/local/bin/pip3
 
-RUN apt-get install -y libyaml-0.2 git tmux ca-certificates && \
+RUN apt-get update && apt-get install -y libyaml-0.2 git tmux ca-certificates && \
     update-ca-certificates --fresh && \
     if [ "$HTTP_PROXY" != "" ]; then \
         echo "Using proxy: ${HTTP_PROXY}" && \
