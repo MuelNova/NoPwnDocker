@@ -35,7 +35,7 @@ docker compose build
 如果使用 docker compose:
 
 ```bash
-docker exec -it NoPwn2404
+docker attach NoPwn2404
 ```
 
 如果仅运行
@@ -50,7 +50,7 @@ docker run -it --rm \  # 如果需要持久化，则去掉 --rm
 
 ## 配置
 
- Docker 中 Python GDB 版本等均可自定义，至于 Proxy，思想实验觉得是可以设置的，未实验。
+Docker 中 Python GDB 版本等均可自定义，至于 Proxy，思想实验觉得是可以设置的，未实验。
 
 `docker-compose.ymlw`
 
@@ -58,20 +58,26 @@ docker run -it --rm \  # 如果需要持久化，则去掉 --rm
 # 通用的构建参数
 x-build-args: &build-args
   # 代理地址，在 Docker 中使用 host.docker.internal 访问主机
-  # PROXY: "http://host.docker.internal:7890"
+  # PROXY: "http://host.docker.internal:7897"
   PROXY: ""
   NO_PROXY: "localhost,127.0.0.1"
+  # 使用国内镜像下载 apt
+  USE_MIRROR: "no" # or "yes"
+  # 额外包安装
+  EXTRA_PACKAGES: "vim nano"
 
 # 通用的服务配置
 x-common: &common
   volumes:
-    # - ./challenges:/ctf  # 修改为你的目录
+    - ~/ctf:/ctf # 修改为你的目录
   cap_add:
     - SYS_PTRACE
   security_opt:
     - seccomp=unconfined
   extra_hosts:
     - "host.docker.internal:host-gateway"
+  stdin_open: true
+  tty: true
 
 services:
   ubuntu24.04:
@@ -89,10 +95,6 @@ services:
     hostname: NoPwnV2_24.04
     container_name: NoPwn2404
 ```
-
-对于额外的包，可以找到对应的 `Dockerfile`，在最下面添加。
-
-修改后，重新编译即可
 
 ```bash
 docker compose build ubuntu24.04

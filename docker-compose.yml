@@ -1,20 +1,28 @@
 # 通用的构建参数
 x-build-args: &build-args
   # 代理地址，在 Docker 中使用 host.docker.internal 访问主机
-  # PROXY: "http://host.docker.internal:7890"
+  # PROXY: "http://host.docker.internal:7897"
   PROXY: ""
   NO_PROXY: "localhost,127.0.0.1"
 
+  # 使用国内镜像下载 apt
+  USE_MIRROR: "no" # or "yes"
+
+  # 额外包安装
+  EXTRA_PACKAGES: "vim nano"
+
 # 通用的服务配置
 x-common: &common
-  # volumes:
-  # - ./challenges:/ctf  # 修改为你的目录
+  volumes:
+    - ~/ctf:/ctf # 修改为你的目录
   cap_add:
     - SYS_PTRACE
   security_opt:
     - seccomp=unconfined
   extra_hosts:
     - "host.docker.internal:host-gateway"
+  stdin_open: true
+  tty: true
 
 services:
   ubuntu24.04:

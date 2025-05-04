@@ -3,6 +3,7 @@ FROM ${IMAGE} AS base
 
 # Args
 ARG PROXY
+ARG USE_MIRROR=no
 ARG NO_PROXY="localhost,127.0.0.1"
 
 # Env
@@ -17,9 +18,12 @@ ENV NO_PROXY=${NO_PROXY}
 RUN if [ "$PROXY" != "" ]; then \
         echo "Using proxy: ${PROXY}" && \
         echo "Acquire::http::Proxy \"${PROXY}\";" > /etc/apt/apt.conf.d/proxy.conf && \
-        echo "Acquire::https::Proxy \"${PROXY}\";" >> /etc/apt/apt.conf.d/proxy.conf && \
-        sed -i 's@http://.*archive.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list && \
-        sed -i 's@http://.*security.ubuntu.com@https://mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list; \
+        echo "Acquire::https::Proxy \"${PROXY}\";" >> /etc/apt/apt.conf.d/proxy.conf; \
+    fi
+
+RUN if [ "$USE_MIRROR" = "yes" ]; then \
+        sed -i 's@http://.*archive.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list && \
+        sed -i 's@http://.*security.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list; \
     fi
 
 # Install
@@ -101,6 +105,8 @@ RUN wget https://cache.ruby-lang.org/pub/ruby/${RUBY_VERSION%.*}/ruby-${RUBY_VER
 # --- Stage 5: Final ---
 FROM base AS final
 
+ARG EXTRA_PACKAGES=""
+
 COPY --from=gdb-build /usr/local /usr/local
 COPY --from=ruby-build /usr/local /usr/local
 
@@ -132,8 +138,9 @@ RUN apt-get install -y fish curl && \
     # 设置为默认 shell
     chsh -s /usr/bin/fish
 
-# ADD YOUR PACKAGES HERE
-# RUN apt-get install -y <your-package> --no-install-recommends
+RUN if [ -n "$EXTRA_PACKAGES" ]; then \
+    apt-get install -y $EXTRA_PACKAGES --no-install-recommends; \
+fi
 
 RUN apt-get remove -y ruby-dev python3-pip gdb python3-dev python3-venv python3-setuptools && \
     apt-get clean && \
