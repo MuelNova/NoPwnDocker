@@ -9,7 +9,7 @@ x-build-args: &build-args
   USE_MIRROR: "no" # or "yes"
 
   # 额外包安装
-  EXTRA_PACKAGES: "vim nano"
+  EXTRA_PACKAGES: "vim nano cpio"
 
 # 通用的服务配置
 x-common: &common

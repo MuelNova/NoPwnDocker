@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# 默认目标文件夹
+folder="fs"
+
+# 解析参数
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+  -f | --folder)
+    folder="$2"
+    shift
+    ;;
+  *)
+    cpio_path="$1"
+    ;;
+  esac
+  shift
+done
+
+# 检查cpio_path是否提供
+if [[ -z "$cpio_path" ]]; then
+  echo "Usage: $0 [-f|--folder folder_name] cpio_path"
+  exit 1
+fi
+
+# 创建目标文件夹
+mkdir -p "$folder"
+
+# 将cpio_path拷贝到目标文件夹
+cp "$cpio_path" "$folder"
+
+# 获取文件名
+cpio_file=$(basename "$cpio_path")
+
+# 进入目标文件夹
+cd "$folder" || exit
+
+# 判断文件是否被 gzip 压缩
+if file "$cpio_file" | grep -q "gzip compressed"; then
+  echo "$cpio_file is gzip compressed, checking extension..."
+
+  # 判断文件名是否带有 .gz 后缀
+  if [[ "$cpio_file" != *.gz ]]; then
+    mv "$cpio_file" "$cpio_file.gz"
+    cpio_file="$cpio_file.gz"
+  fi
+
+  echo "Decompressing $cpio_file..."
+  gunzip "$cpio_file"
+  # 去掉 .gz 后缀，得到解压后的文件名
+  cpio_file="${cpio_file%.gz}"
+fi
+
+# 解压cpio文件
+echo "Extracting $cpio_file to file system..."
+cpio -idmv <"$cpio_file"
+rm "$cpio_file"
+echo "Extraction complete."

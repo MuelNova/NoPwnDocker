@@ -204,4 +204,7 @@ COPY scripts/.gdbinit /root/.gdbinit
 COPY scripts/config.fish /root/.config/fish/config.fish
 COPY scripts/.tmux.conf /root/.tmux.conf
 
+COPY scripts/compress_fs /usr/local/bin/compress_fs
+COPY scripts/extract_fs /usr/local/bin/extract_fs
+
 CMD ["/usr/local/bin/fish"]
