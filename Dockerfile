@@ -123,9 +123,7 @@ RUN git clone --depth 1 https://github.com/pwndbg/pwndbg ~/.local/pwndbg && \
     cd ~/.local/pwndbg && \
     ./setup.sh && \
     git clone --depth 1 https://github.com/scwuaptx/Pwngdb.git ~/.local/Pwngdb && \
-    wget -q https://raw.githubusercontent.com/bata24/gef/dev/install.sh -O- | sh && \
-    mkdir -p ~/.local/gef && \
-    mv /root/.gdbinit-gef.py ~/.local/gef/gef.py
+    wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- | sh
 
 RUN apt-get install -y fish curl && \
     mkdir -p ~/.config/fish && \

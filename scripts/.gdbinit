@@ -13,5 +13,5 @@ angelheap.init_angelheap()
 end
 
 define gef-init
-    source ~/.local/gef/gef.py
+    python sys.path.insert(0, "/root/.gef"); from gef import *; Gef.main()
 end
