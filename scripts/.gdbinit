@@ -7,8 +7,8 @@ source ~/.local/Pwngdb/angelheap/gdbinit.py
 
 define hook-run
     python
-        import angelheap
-        angelheap.init_angelheap()
+import angelheap
+angelheap.init_angelheap()
     end
 end
 
