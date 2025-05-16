@@ -158,6 +158,7 @@ RUN apt-get remove -y ruby-dev python3-pip gdb python3-dev python3-venv python3-
 COPY scripts/.gdbinit /root/.gdbinit
 COPY scripts/config.fish /root/.config/fish/config.fish
 COPY scripts/.tmux.conf /root/.tmux.conf
+COPY scripts/pwno.config.toml /root/.config/pwno/config.toml
 
 COPY scripts/compress_fs /usr/local/bin/compress_fs
 COPY scripts/extract_fs /usr/local/bin/extract_fs
